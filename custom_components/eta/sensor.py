@@ -63,44 +63,31 @@ async def async_setup_entry(
 class EtaSensor(SensorEntity):
     """Representation of a Sensor."""
 
+    @property
+    def device_info(self):
+        """Return device information for the sensor."""
+        return {
+            "identifiers": {(DOMAIN, self.host)},
+            "name": "ETA Device",
+            "manufacturer": "ETA",
+            "model": "Integration",
+        }
+
     def __init__(
         self, config, hass, name, uri, unit, state_class=SensorStateClass.MEASUREMENT
     ):
         """
-        Initialize sensor.
-
-        To show all values: http://192.168.178.75:8080/user/menu
-
-        There are:
-          - entity_id - used to reference id, english, e.g. "eta_outside_temperature"
-          - name - Friendly name, e.g "Außentemperatur" in local language
-
+        Initialize sensor with configurable properties.
         """
-        _LOGGER.warning("ETA Integration - init sensor")
-
-        self._attr_device_class = self.determine_device_class(unit)
-
-        if unit == "":
-            unit = None
-
-        if self._attr_device_class == SensorDeviceClass.ENERGY:
-            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
-        else:
-            self._attr_state_class = state_class
-
-        self._attr_native_unit_of_measurement = unit
-        self._attr_native_value = float
-        id = name.lower().replace(" ", "_")
-        self._attr_name = name  # friendly name - local language
-        self.entity_id = generate_entity_id(ENTITY_ID_FORMAT, "eta_" + id, hass=hass)
-        self.session = async_get_clientsession(hass)
-
+        super().__init__()
+        self._attr_name = name
         self.uri = uri
+        self._attr_native_unit_of_measurement = unit
+        self._attr_device_class = self.determine_device_class(unit)
         self.host = config.get(CONF_HOST)
         self.port = config.get(CONF_PORT)
-
-        # This must be a unique value within this domain. This is done using host
-        self._attr_unique_id = "eta" + "_" + self.host + "." + name.replace(" ", "_")
+        self._attr_unique_id = f"eta_{self.host}_{name.replace(' ', '_')}"
+        self.session = async_get_clientsession(hass)
 
     async def async_update(self):
         """Fetch new state data for the sensor.
