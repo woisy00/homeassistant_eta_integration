@@ -1,6 +1,6 @@
 {
   "domain": "eta",
-  "name": "Eta Sensors",
+  "name": "Eta Device",
   "codeowners": ["@woisy00"],
   "config_flow": true,
   "dependencies": [],
