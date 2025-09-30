@@ -73,33 +73,6 @@ class EtaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return await self._show_config_form_endpoint(self.data[FLOAT_DICT])
 
-    async def async_step_sensor_config(self, user_input=None):
-        """Step to configure individual sensors."""
-        if user_input is not None:
-            # Store sensor configuration
-            self.data["sensors"] = user_input["sensors"]
-            return self.async_create_entry(
-                title=f"ETA at {self.data[CONF_HOST]}", data=self.data
-            )
-
-        return self.async_show_form(
-            step_id="sensor_config",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("sensors", default=[]): selector.ObjectSelector(
-                        selector.ObjectSelectorConfig(
-                            options={
-                                "name": "string",
-                                "path": "string",
-                                "unit": "string"
-                            }
-                        )
-                    )
-                }
-            ),
-            errors=self._errors,
-        )
-
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
