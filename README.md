@@ -13,7 +13,7 @@ Note: You have to activate the API on your pellet heater first: see documentatio
 Configuration for the Eta integration is performed via a config flow as opposed to yaml configuration file.
 
 1. Go to HACS -> Integrations -> Click on the three dots in the top right corner --> Click on "custom repositories"
-2. Insert "https://github.com/nigl/homeassistant_eta_integration" into the field "repository"
+2. Insert "https://github.com/woisy00/homeassistant_eta_integration" into the field "repository"
 3. Choose "integration" in the dropdown field "category".
 4. Click on the "Add" button.
 5. Then search for the new added "ETA" integration, click on it and the click on the button "Download" on the right bottom corner 
