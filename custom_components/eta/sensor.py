@@ -40,72 +40,51 @@ async def async_setup_entry(
     config_entry: config_entries.ConfigEntry,
     async_add_entities,
 ):
-    """Setup sensors from a config entry created in the integrations UI."""
-    config = hass.data[DOMAIN][config_entry.entry_id]
-    # Update our config to include new repos and remove those that have been removed.
-    if config_entry.options:
-        config.update(config_entry.options)
+    """Set up sensors dynamically based on the configuration."""
+    config = config_entry.data
 
-    choosen_entities = config[CHOOSEN_ENTITIES]
-    sensors = [
-        EtaSensor(
-            config,
-            hass,
-            entity,
-            config[FLOAT_DICT][entity][0],
-            config[FLOAT_DICT][entity][2],
+    sensors = []
+
+    # Add selected entities
+    for entity in config.get("selected_entities", []):
+        sensors.append(
+            EtaSensor(
+                name=entity,
+                uri=f"/path/to/{entity}",
+                unit="unit",  # Replace with actual unit mapping
+                config=config,
+                hass=hass,
+            )
         )
-        for entity in choosen_entities
-    ]
+
+    # Add manually configured entities
+    for manual_entity in config.get("manual_entities", []):
+        sensors.append(
+            EtaSensor(
+                name=manual_entity["name"],
+                uri=manual_entity["path"],
+                unit="unit",  # Replace with actual unit mapping
+                config=config,
+                hass=hass,
+            )
+        )
+
     async_add_entities(sensors, update_before_add=True)
 
 
 class EtaSensor(SensorEntity):
-    """Representation of a Sensor."""
+    """Representation of an ETA Sensor."""
 
-    def __init__(
-        self, config, hass, name, uri, unit, state_class=SensorStateClass.MEASUREMENT
-    ):
-        """
-        Initialize sensor.
-
-        To show all values: http://192.168.178.75:8080/user/menu
-
-        There are:
-          - entity_id - used to reference id, english, e.g. "eta_outside_temperature"
-          - name - Friendly name, e.g "Außentemperatur" in local language
-
-        """
-        _LOGGER.warning("ETA Integration - init sensor")
-
-        self._attr_device_class = self.determine_device_class(unit)
-
-
-        if unit == "":
-            unit = None
-
-        if self._attr_device_class == SensorDeviceClass.ENERGY:
-            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
-        else:
-            self._attr_state_class = state_class
-
+    def __init__(self, name, uri, unit, config, hass):
+        self._attr_name = name
+        self.uri = uri
         self._attr_native_unit_of_measurement = unit
-        self._attr_native_value = float
-        id = name.lower().replace(" ", "_")
-        self._attr_name = name  # friendly name - local language
-        self.entity_id = generate_entity_id(ENTITY_ID_FORMAT, "eta_" + id, hass=hass)
+        self.host = config[CONF_HOST]
+        self.port = config[CONF_PORT]
         self.session = async_get_clientsession(hass)
 
-        self.uri = uri
-        self.host = config.get(CONF_HOST)
-        self.port = config.get(CONF_PORT)
-        self._attr_unique_id = f"eta_{self.host}_{name.replace(' ', '_')}"
-
     async def async_update(self):
-        """Fetch new state data for the sensor.
-        This is the only method that should fetch new data for Home Assistant.
-        readme: activate first: http://www.holzheizer-forum.de/attachment/28434-eta-restful-v1-1-pdf/
-        """
+        """Fetch new state data for the sensor."""
         eta_client = EtaAPI(self.session, self.host, self.port)
         value, _ = await eta_client.get_data(self.uri)
         self._attr_native_value = float(value)

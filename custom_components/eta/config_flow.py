@@ -26,6 +26,7 @@ class EtaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self):
         """Initialize."""
+        self.data = {}
         self._errors = {}
 
     async def async_step_user(self, user_input=None):
@@ -71,7 +72,24 @@ class EtaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 title=f"ETA at {self.data[CONF_HOST]}", data=self.data
             )
 
-        return await self._show_config_form_endpoint(self.data[FLOAT_DICT])
+        # Simulate fetching XML structure from the device
+        tree_structure = {"Temperature": ["Room Temp", "Outside Temp"], "Energy": ["Usage", "Production"]}
+
+        return self.async_show_form(
+            step_id="select_entities",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CHOOSEN_ENTITIES):
+                        selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=tree_structure,
+                                mode=selector.SelectSelectorMode.DROPDOWN,
+                                multiple=True
+                            ))
+                }
+            ),
+            errors=self._errors,
+        )
 
     @staticmethod
     @callback
