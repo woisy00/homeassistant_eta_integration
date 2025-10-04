@@ -5,3 +5,4 @@ venv
 .coverage
 .idea
 venv2
+config

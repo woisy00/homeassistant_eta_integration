@@ -2,34 +2,32 @@
     "config": {
         "step": {
             "user": {
-                "title": "ETA Step 1",
-                "description": "Type in host and port of your ETA terminal. If you need help with the configuration have a look here: https://github.com/nigl/homeassistant_eta_integration",
+                "title": "Connect to ETA unit",
+                "description": "Type in host and port of your ETA Heating Unit.",
                 "data": {
                     "host": "Host",
                     "port": "Port"
                 }
             },
-            "select_entities": {
-                "title": "ETA Step 2",
-                "description": "Select entities which should be added as entities",
+            "select_sensors": {
+                "title": "Select ETA sensors",
+                "description": "Select sensors which should be added",
                 "data": {
-                    "choosen_entities": "Possible entities"
+                    "choosen_entities": "Possible sensors"
                 }
             }
         },
         "error": {
             "url_broken": "Host and Port does not provide valid ETA Endpoint"
-        },
-        "abort": {
-            "single_instance_allowed": "Only a single instance is allowed."
         }
     },
     "options": {
         "step": {
-            "user": {
+            "select_sensors": {
+                "title": "Select ETA sensors",
+                "description": "Select sensors which should be added",
                 "data": {
-                    "binary_sensor": "Binary sensor enabled",
-                    "sensor": "Sensor enabled"
+                    "choosen_entities": "Possible sensors"
                 }
             }
         }

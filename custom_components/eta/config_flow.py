@@ -1,168 +1,134 @@
-"""Adds config flow for Blueprint."""
+"""
+Config flow for ETA Device integration.
+"""
+
 import voluptuous as vol
 from copy import deepcopy
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.helpers import selector
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, CONF_MODEL
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.const import (CONF_HOST, CONF_PORT)
+from homeassistant.helpers import selector
+from .const import CHOOSEN_ENTITIES, DOMAIN, FLOAT_DICT
+from .api import EtaAPI, EtaAPIFactory
 from homeassistant.helpers.entity_registry import (
     async_entries_for_config_entry,
     async_get,
 )
-from .api import EtaAPI
-from .const import (
-    DOMAIN,
-    FLOAT_DICT,
-    CHOOSEN_ENTITIES
-)
 
 
-class EtaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Eta."""
+class EtaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for ETA Device."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
+    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     def __init__(self):
         """Initialize."""
-        self.data = {}
         self._errors = {}
 
     async def async_step_user(self, user_input=None):
-        """Handle a flow initialized by the user."""
-        self._errors = {}
+        if user_input is not None:
+            # Save host/port and move to sensor selection
+            self._name = user_input[CONF_NAME]
+            self._model = user_input[CONF_MODEL]
+            self._host = user_input[CONF_HOST]
+            self._port = user_input[CONF_PORT]
+            return await self.async_step_select_sensors()
 
-        # Uncomment the next 2 lines if only a single instance of the integration is allowed:
-        # if self._async_current_entries():
-        #     return self.async_abort(reason="single_instance_allowed")
+        return await self._show_host_port_config(user_input)
+
+    async def async_step_select_sensors(self, user_input=None):
+        # Use instance variables set in async_step_user
+        session = async_get_clientsession(self.hass)
+        eta_api = EtaAPIFactory.get_instance(session, self._host, self._port)
+        sensor_dict = await eta_api.get_sensors()
 
         if user_input is not None:
-            valid = await self._test_url(
-                user_input[CONF_HOST],
-                user_input[CONF_PORT]
-            )
-            if valid:
-                self.data = user_input
-                self.data[FLOAT_DICT] = await self._get_possible_endpoints(
-                    user_input[CONF_HOST],
-                    user_input[CONF_PORT])
-
-                return await self.async_step_select_entities()
-            else:
-                self._errors["base"] = "url_broken"
-
-            return await self._show_config_form_user(user_input)
-
-        user_input = {}
-        # Provide defaults for form
-        user_input[CONF_HOST] = "0.0.0.0"
-        user_input[CONF_PORT] = "8080"
-
-        return await self._show_config_form_user(user_input)
-
-    async def async_step_select_entities(self, user_input=None):
-        """Second step in config flow to add a repo to watch."""
-        if user_input is not None:
-            # add choosen entities to data
-            self.data[CHOOSEN_ENTITIES] = user_input[CHOOSEN_ENTITIES]
-
-            # User is done, create the config entry.
+            # Save selected sensors (as URIs or labels as needed)
+            selected_sensors = user_input[CHOOSEN_ENTITIES]
+            #selected_sensors = [sensor_dict.byName(label).id for label in selected_labels]
+            # Save config entry
             return self.async_create_entry(
-                title=f"ETA at {self.data[CONF_HOST]}", data=self.data
+                title=f"ETA Device ({self._host})",
+                data={
+                    CONF_HOST: self._host,
+                    CONF_PORT: self._port,
+                    CONF_NAME: self._name,
+                    CONF_MODEL: self._model,
+                    CHOOSEN_ENTITIES: selected_sensors,
+                },
             )
-
-        # Simulate fetching XML structure from the device
-        tree_structure = {"Temperature": ["Room Temp", "Outside Temp"], "Energy": ["Usage", "Production"]}
 
         return self.async_show_form(
-            step_id="select_entities",
+            step_id="select_sensors",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CHOOSEN_ENTITIES):
-                        selector.SelectSelector(
-                            selector.SelectSelectorConfig(
-                                options=tree_structure,
-                                mode=selector.SelectSelectorMode.DROPDOWN,
-                                multiple=True
-                            ))
+                    vol.Optional(CHOOSEN_ENTITIES): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=sensor_dict.nameDict(),
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                            multiple=True,
+                        )
+                    )
                 }
             ),
             errors=self._errors,
         )
 
+    async def _show_host_port_config(self, user_input=None):
+        # Always return a form if no user_input
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NAME, default="ETA Pellet Unit"): str,
+                    vol.Required(CONF_MODEL, default=""): str,
+                    vol.Required(CONF_HOST): str,
+                    vol.Required(CONF_PORT, default=8080): int,
+                }
+            ),
+            errors=self._errors,
+        )
+
+    # Add the options flow to the config flow
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
         return EtaOptionsFlowHandler(config_entry)
 
-    async def _show_config_form_user(self, user_input):  # pylint: disable=unused-argument
-        """Show the configuration form to edit host and port data."""
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_HOST, default=user_input[CONF_HOST]): str,
-                    vol.Required(CONF_PORT, default=user_input[CONF_PORT]): str,
-                }
-            ),
-            errors=self._errors,
-        )
-
-    async def _show_config_form_endpoint(self, endpoint_dict):  # pylint: disable=unused-argument
-        """Show the configuration form to select which endpoints should become entities."""
-        return self.async_show_form(
-            step_id="select_entities",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(CHOOSEN_ENTITIES):
-                        selector.SelectSelector(
-                            selector.SelectSelectorConfig(
-                                options=[key for key in endpoint_dict.keys()],
-                                mode=selector.SelectSelectorMode.DROPDOWN,
-                                multiple=True
-                            ))
-                }
-            ),
-            errors=self._errors,
-        )
-
-    async def _get_possible_endpoints(self, host, port):
-        session = async_get_clientsession(self.hass)
-        eta_client = EtaAPI(session, host, port)
-        float_dict = await eta_client.get_float_sensors()
-
-        return float_dict
-
-    async def _test_url(self, host, port):
-        """Return true if host port is valid."""
-        session = async_get_clientsession(self.hass)
-        eta_client = EtaAPI(session, host, port)
-
-        does_endpoint_exist = await eta_client.does_endpoint_exists()
-        return does_endpoint_exist
-
 
 class EtaOptionsFlowHandler(config_entries.OptionsFlow):
-    """Blueprint config flow options handler."""
+    """Handle options flow for ETA Device."""
 
     def __init__(self, config_entry):
-        """Initialize HACS options flow."""
         self.config_entry = config_entry
         self.data = dict(config_entry.data)
-
-    async def async_step_init(self, user_input=None):  # pylint: disable=unused-argument
-        return await self.async_step_user()
-
-    async def async_step_user(self, user_input=None):
-        """Manage the options."""
         self._errors = {}
 
-        entity_registry = async_get(self.hass)
-        entries = async_entries_for_config_entry(entity_registry, self.config_entry.entry_id)
-        entity_map = {e.original_name: e for e in entries}
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        # Save host/port and move to sensor selection
+        self._host = self.config_entry.data.get(CONF_HOST, "")
+        self._port = self.config_entry.data.get(CONF_PORT, 8080)
+        return await self.async_step_select_sensors()
 
+    async def async_step_select_sensors(self, user_input=None):
+        """Select sensors to configure."""
+        session = async_get_clientsession(self.hass)
+        eta_api = EtaAPIFactory.get_instance(session, self._host, self._port)
+        sensor_dict = await eta_api.get_sensors()
+        # Get current selection from options or fallback to data
+        current = self.config_entry.options.get(
+            CHOOSEN_ENTITIES,
+            self.config_entry.data.get(CHOOSEN_ENTITIES, [])
+        )
+        
         if user_input is not None:
+            entity_registry = async_get(self.hass)
+            entries = async_entries_for_config_entry(entity_registry, self.config_entry.entry_id)
+            entity_map = {e.unique_id.split("_")[3]: e for e in entries}
+            
             removed_entities = [
                 entity_map[entity_id]
                 for entity_id in entity_map.keys()
@@ -172,35 +138,33 @@ class EtaOptionsFlowHandler(config_entries.OptionsFlow):
                 # Unregister from HA
                 entity_registry.async_remove(e.entity_id)
 
-            old_chosen_entities = deepcopy(self.config_entry.data[CHOOSEN_ENTITIES])
-            data = {CHOOSEN_ENTITIES: user_input[CHOOSEN_ENTITIES],
-                    FLOAT_DICT: self.data[FLOAT_DICT],
+            data = {CHOOSEN_ENTITIES: user_input[CHOOSEN_ENTITIES],                    
+                    CONF_NAME: self.data[CONF_NAME],
+                    CONF_MODEL: self.data[CONF_MODEL],
                     CONF_HOST: self.data[CONF_HOST],
                     CONF_PORT: self.data[CONF_PORT]}
+                        
+            return self.async_create_entry(title="", data=data)
 
-            return self.async_create_entry(
-                title="", data=data)
-        return await self._show_config_form_endpoint(self.data[FLOAT_DICT], [key for key in entity_map.keys()])
-
-    async def _show_config_form_endpoint(self, endpoint_dict, current_chosen):  # pylint: disable=unused-argument
-        """Show the configuration form to select which endpoints should become entities."""
         return self.async_show_form(
-            step_id="user",
+            step_id="select_sensors",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CHOOSEN_ENTITIES, default=current_chosen):
-                        selector.SelectSelector(
-                            selector.SelectSelectorConfig(
-                                options=[key for key in endpoint_dict.keys()],
-                                mode=selector.SelectSelectorMode.DROPDOWN,
-                                multiple=True
-                            ))
+                    vol.Optional(CHOOSEN_ENTITIES, default=current): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=sensor_dict.nameDict(),                            
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                            multiple=True,
+                        )
+                    )
                 }
-            )
+            ),
+            errors=self._errors,
         )
-
+        
     async def _update_options(self):
         """Update config entry options."""
         return self.async_create_entry(
             title=self.config_entry.data.get(CONF_HOST), data=self.options
         )
+

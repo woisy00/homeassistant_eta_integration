@@ -52,15 +52,6 @@ async def test_get_request(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_does_endpoint_exists(monkeypatch):
-    monkeypatch.setattr(EtaAPI, "get_request", mock_get_request)
-    eta = EtaAPI("session", "host", "port")
-
-    resp = await eta.does_endpoint_exists()
-    assert resp == True
-
-
-@pytest.mark.asyncio
 async def test_get_data(monkeypatch):
     monkeypatch.setattr(EtaAPI, "get_request", mock_get_request)
     eta = EtaAPI("session", "host", "port")
@@ -91,14 +82,14 @@ async def test_get_menu(monkeypatch):
 def test_get_all_childs():
     eta = EtaAPI("session", "host", "port")
     uri_dict = {}
-    eta.evaluate_xml_dict(xmltodict.parse(menu_txt)["eta"]["menu"]["fub"], uri_dict)
+    eta._evaluate_xml_dict(xmltodict.parse(menu_txt)["eta"]["menu"]["fub"], uri_dict)
     assert type(uri_dict) == dict
     assert len(uri_dict) == 123
 
 
 def test_build_uri():
     eta = EtaAPI("session", "host", "port")
-    assert eta.build_uri("/suffix") == "http://host:port/suffix"
+    assert eta._build_uri("/suffix") == "http://host:port/suffix"
 
 
 @pytest.mark.asyncio
