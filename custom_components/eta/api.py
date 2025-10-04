@@ -200,7 +200,7 @@ class EtaAPI:
             varInfo = xml["eta"].get("varInfo", None)
             if varInfo:
                 type = varInfo["variable"]["type"]
-                name = varInfo["variable"]["@fullName"]
+                name = None # varInfo["variable"]["@fullName"]
                 if name:
                     sensor.updateName(name)
                     # name (canonical has changed, add to dict again)
