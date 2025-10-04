@@ -101,16 +101,17 @@ class EtaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class EtaOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options flow for ETA Device."""
 
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
-        self.data = dict(config_entry.data)
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self._config_entry = config_entry  # ✅ store privately, not as .config_entry
+        self._data = dict(config_entry.data)
         self._errors = {}
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
         # Save host/port and move to sensor selection
-        self._host = self.config_entry.data.get(CONF_HOST, "")
-        self._port = self.config_entry.data.get(CONF_PORT, 8080)
+        self._host = self._config_entry.data.get(CONF_HOST, "")
+        self._port = self._config_entry.data.get(CONF_PORT, 8080)
         return await self.async_step_select_sensors()
 
     async def async_step_select_sensors(self, user_input=None):
@@ -119,14 +120,14 @@ class EtaOptionsFlowHandler(config_entries.OptionsFlow):
         eta_api = EtaAPIFactory.get_instance(session, self._host, self._port)
         sensor_dict = await eta_api.get_sensors()
         # Get current selection from options or fallback to data
-        current = self.config_entry.options.get(
+        current = self._config_entry.options.get(
             CHOOSEN_ENTITIES,
-            self.config_entry.data.get(CHOOSEN_ENTITIES, [])
+            self._config_entry.data.get(CHOOSEN_ENTITIES, [])
         )
         
         if user_input is not None:
             entity_registry = async_get(self.hass)
-            entries = async_entries_for_config_entry(entity_registry, self.config_entry.entry_id)
+            entries = async_entries_for_config_entry(entity_registry, self._config_entry.entry_id)
             entity_map = {e.unique_id.split("_")[3]: e for e in entries}
             
             removed_entities = [
@@ -139,10 +140,10 @@ class EtaOptionsFlowHandler(config_entries.OptionsFlow):
                 entity_registry.async_remove(e.entity_id)
 
             data = {CHOOSEN_ENTITIES: user_input[CHOOSEN_ENTITIES],                    
-                    CONF_NAME: self.data[CONF_NAME],
-                    CONF_MODEL: self.data[CONF_MODEL],
-                    CONF_HOST: self.data[CONF_HOST],
-                    CONF_PORT: self.data[CONF_PORT]}
+                    CONF_NAME: self._data[CONF_NAME],
+                    CONF_MODEL: self._data[CONF_MODEL],
+                    CONF_HOST: self._data[CONF_HOST],
+                    CONF_PORT: self._data[CONF_PORT]}
                         
             return self.async_create_entry(title="", data=data)
 
@@ -165,6 +166,6 @@ class EtaOptionsFlowHandler(config_entries.OptionsFlow):
     async def _update_options(self):
         """Update config entry options."""
         return self.async_create_entry(
-            title=self.config_entry.data.get(CONF_HOST), data=self.options
+            title=self._config_entry.data.get(CONF_HOST), data=self.options
         )
 

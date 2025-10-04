@@ -20,6 +20,13 @@ async def async_setup_entry(
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
     return True
 
+async def async_unload_entry(hass, entry):
+    """Unload an ETA config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
+    # Replace ["sensor"] with all the platforms you set up in async_setup_entry()
+    if unload_ok:
+        hass.data["eta"].pop(entry.entry_id)
+    return unload_ok
 
 async def options_update_listener(hass, config_entry):
     """Handle options update."""
