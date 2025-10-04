@@ -1,0 +1,4 @@
+{
+    "sonarlint.disableTelemetry": true,
+    "sonarlint.analysisExcludesStandalone": "**/**"
+}

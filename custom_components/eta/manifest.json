@@ -1,12 +1,16 @@
 {
   "domain": "eta",
-  "name": "Eta Device",
-  "codeowners": ["@woisy00"],
+  "name": "Eta Heating Unit",
+  "codeowners": [
+    "@woisy00"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/woisy00/homeassistant_eta_integration",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/woisy00/homeassistant_eta_integration/issues",
-  "requirements": ["xmltodict"],
+  "requirements": [
+    "xmltodict"
+  ],
   "version": "0.0.2"
 }
