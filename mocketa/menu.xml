@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eta version="1.0" xmlns="http://www.eta.co.at/rest/v1">
+ <menu uri="/user/menu/">
+  <fub uri="/40/10211" name="Lager">
+   <object uri="/40/10211/0/0/12015" name="Vorrat">
+    <object uri="/40/10211/0/0/12042" name="Vorrat Warngrenze"/>
+    <object uri="/40/10211/0/0/12790" name="Maximaler Vorrat"/>
+   </object>
+  </fub>
+
+  <fub uri="/40/10241" name="Sys">
+   <object uri="/40/10241/0/0/12197" name="Außentemperatur" />
+  </fub>
+  <fub uri="/40/10021" name="Kessel">
+    <object uri="/40/10021/0/0/19402" name="Kessel" />
+  </fub>
+ </menu>
+</eta>

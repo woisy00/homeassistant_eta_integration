@@ -126,26 +126,26 @@ class EtaOptionsFlowHandler(config_entries.OptionsFlow):
         )
         
         if user_input is not None:
+            selected = user_input[CHOOSEN_ENTITIES]
             entity_registry = async_get(self.hass)
             entries = async_entries_for_config_entry(entity_registry, self._config_entry.entry_id)
-            entity_map = {e.unique_id.split("_")[3]: e for e in entries}
-            
-            removed_entities = [
-                entity_map[entity_id]
-                for entity_id in entity_map.keys()
-                if entity_id not in user_input[CHOOSEN_ENTITIES]
-            ]
-            for e in removed_entities:
-                # Unregister from HA
-                await entity_registry.async_remove(e.entity_id)
+            for e in entries:
+                rid = e.unique_id.split("_")[3]            
+                if rid not in selected:
+                    # Unregister from HA
+                    entity_registry.async_remove(e.entity_id)
 
-            data = {CHOOSEN_ENTITIES: user_input[CHOOSEN_ENTITIES],                    
+            data = {CHOOSEN_ENTITIES: selected,
                     CONF_NAME: self._data[CONF_NAME],
                     CONF_MODEL: self._data[CONF_MODEL],
                     CONF_HOST: self._data[CONF_HOST],
                     CONF_PORT: self._data[CONF_PORT]}
-                        
-            return self.async_create_entry(title="", data=data)
+            self.hass.config_entries.async_update_entry(self.config_entry, data=data)
+            self.hass.async_create_task(
+                self.hass.config_entries.async_reload(self.config_entry.entry_id)
+            )
+                                    
+            return self.async_create_entry(title="", data={})
 
         return self.async_show_form(
             step_id="select_sensors",
@@ -162,6 +162,7 @@ class EtaOptionsFlowHandler(config_entries.OptionsFlow):
             ),
             errors=self._errors,
         )
+
         
     async def _update_options(self):
         """Update config entry options."""

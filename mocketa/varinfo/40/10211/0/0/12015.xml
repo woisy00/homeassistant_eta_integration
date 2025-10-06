@@ -1,0 +1,7 @@
+<eta xmlns="http://www.eta.co.at/rest/v1" version="1.0">
+    <varInfo uri="/user/varinfo/40/10211/0/0/12015">
+        <variable advTextOffset="0" unit="kg" uri="40/10211/0/0/12015" isWritable="0" scaleFactor="10" name="Vorrat" fullName="Lager > Vorrat" decPlaces="0">
+            <type>DEFAULT</type>
+        </variable>
+    </varInfo>
+</eta>

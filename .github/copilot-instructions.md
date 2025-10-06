@@ -36,16 +36,20 @@
 - **ETA REST API:** All device data is fetched via HTTP from the ETA unit (API must be enabled on the device).
 - **HACS:** Installation and updates are managed via HACS.
 
+
 ## Key Files & Directories
 - `custom_components/eta/` — main integration code
 - `tests/` — test suite and test resources
 - `scripts/` — dev scripts (setup, lint, develop)
+- `mocketa/` — mock ETA HTTP server for local development
 - `.devcontainer.json` — VS Code devcontainer config
 - `setup.cfg` — lint/format config
+
 
 ## Examples
 - To add a new sensor type, extend `SensorType` and update `api.py` and `sensor.py` accordingly.
 - To run tests with coverage: `pytest --cov=custom_components.eta tests/`
+- To emulate an ETA unit locally, place XML files in `mocketa/` and run `python mocketa/server.py`. The server will serve files over HTTP (default port 8080) for integration testing.
 
 ---
 For more, see `README.md` and `tests/README.md`. When in doubt, follow Home Assistant core integration patterns.

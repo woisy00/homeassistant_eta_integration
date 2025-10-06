@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<eta version="1.0" xmlns="http://www.eta.co.at/rest/v1">
+  <value uri="/user/var/40/10021/0/0/19402" strValue="4000" unit="" decPlaces="0" scaleFactor="" advTextOffset="0">4000</value>
+</eta>

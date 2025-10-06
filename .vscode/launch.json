@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "MockETA",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mocketa/server.py",
+            "console": "integratedTerminal"
+        },
+        {
             "type": "debugpy",
             "request": "launch",
             "name": "Launch Home Assistant (dev)",
