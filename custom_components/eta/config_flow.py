@@ -137,7 +137,7 @@ class EtaOptionsFlowHandler(config_entries.OptionsFlow):
             ]
             for e in removed_entities:
                 # Unregister from HA
-                entity_registry.async_remove(e.entity_id)
+                await entity_registry.async_remove(e.entity_id)
 
             data = {CHOOSEN_ENTITIES: user_input[CHOOSEN_ENTITIES],                    
                     CONF_NAME: self._data[CONF_NAME],
